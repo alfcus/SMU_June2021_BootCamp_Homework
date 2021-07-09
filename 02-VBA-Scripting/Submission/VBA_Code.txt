@@ -1,0 +1,104 @@
+Sub StockAnalysis():
+
+    ' Setting intial variables
+    Dim i As Long
+    Dim j As Integer
+    Dim firstOpen As Double
+    Dim lastClose As Double
+    Dim yearlyChange As Double
+    Dim percentChange As Double
+    Dim percChgConv As String
+    Dim totalVolume As Double
+    Dim lastRow As Double
+    Dim ws As Worksheet
+        
+    ' Working through multiple worksheets
+    For Each ws In Worksheets
+        
+        lastRow = ws.UsedRange.Rows.Count
+        j = 1
+        totalVolume = 0
+        
+        ' Gather data for summary table
+        For i = 2 To lastRow
+            
+           ' Record initial opening price on new worksheets
+           If i = 2 Then
+                firstOpen = ws.Cells(i, 3).Value
+           End If
+                        
+           ' Next row check for total volume calculation
+           If ws.Cells(i + 1, 1).Value = ws.Cells(i, 1).Value Then
+                totalVolume = totalVolume + ws.Cells(i, 7).Value
+           Else
+                totalVolume = totalVolume + ws.Cells(i, 7).Value
+                lastClose = ws.Cells(i, 6).Value
+                
+                ' Change calculations
+                yearlyChange = lastClose - firstOpen
+                
+                If (firstOpen <> 0) Then
+                    percentChange = (yearlyChange / firstOpen)
+                ElseIf (yearlyChange = 0) Then
+                    percentChange = 0.00000001
+                Else
+                    firstOpen = 1
+                    percentChange = (yearlyChange / firstOpen)
+                End If
+                
+                percChgConv = FormatPercent(percentChange)
+                
+                ' Add summary table header when working with multiple worksheets
+                If j = 1 Then
+                    ws.Cells(j, 9).Value = "Ticker"
+                    ws.Cells(j, 10).Value = "Yearly Change"
+                    ws.Cells(j, 11).Value = "Percent Change"
+                    ws.Cells(j, 12).Value = "Total Stock Volume"
+                    ws.Cells(j, 15).Value = "Ticker"
+                    ws.Cells(j, 16).Value = "Value"
+                    ws.Range("N2").Value = "Greatest % Increase"
+                    ws.Range("N3").Value = "Greatest % Decrease"
+                    ws.Range("N4").Value = "Greatest Total Volume"
+                End If
+                
+                ' Post data to summary table
+                j = j + 1
+                ws.Cells(j, 9).Value = ws.Cells(i, 1).Value ' ticker
+                ws.Cells(j, 10).Value = yearlyChange
+                ws.Cells(j, 11).Value = percChgConv
+                ws.Cells(j, 12).Value = totalVolume
+                
+                ' Conditional formatting cell colors
+                If (yearlyChange < 0) Then
+                    ws.Cells(j, 10).Interior.ColorIndex = 3 ' Color cell red
+                Else
+                    ws.Cells(j, 10).Interior.ColorIndex = 4 ' Color cell green
+                End If
+                
+                ' "Greatest" summary table update
+                ws.Range("P2").NumberFormat = "0.00%"
+                ws.Range("P3").NumberFormat = "0.00%"
+                
+                If (percentChange > ws.Range("P2").Value) Then
+                    ws.Range("O2").Value = ws.Cells(i, 1).Value
+                    ws.Range("P2").Value = percentChange
+                ElseIf (percentChange < ws.Range("P3").Value) Then
+                    ws.Range("O3").Value = ws.Cells(i, 1).Value
+                    ws.Range("P3").Value = percentChange
+                End If
+                            
+                If (totalVolume > ws.Range("P4").Value) Then
+                    ws.Range("O4").Value = ws.Cells(i, 1).Value
+                    ws.Range("P4").Value = totalVolume
+                End If
+                
+                ' Value resets
+                firstOpen = ws.Cells(i + 1, 3).Value
+                totalVolume = 0
+           End If
+        
+        Next i
+       
+    Next
+    
+End Sub
